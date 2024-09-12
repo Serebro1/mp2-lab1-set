@@ -18,6 +18,7 @@ int main()
 {
     TBitField bf(50);
     bf.SetBit(35);
+    cout << bf;
     /*
   int n, m, k, count;
 
