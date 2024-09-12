@@ -11,16 +11,28 @@
 static const int FAKE_INT = -1;
 static TBitField FAKE_BITFIELD(1);
 
-TBitField::TBitField(int len)
+TBitField::TBitField(int _BitLen)
 {
+    if (_BitLen <= 0) throw - 1; // чтобы в гугл тест прошло нужно выкинуть любое исключение
+    BitLen = _BitLen;
+    MemLen = _BitLen / (sizeof(TELEM) * 8) + 1; // задача: как давать не лишнюю память?
+    pMem = new TELEM[MemLen];
+    for (int i = 0; i < MemLen; i++)
+        pMem[i] = 0;
 }
 
 TBitField::TBitField(const TBitField &bf) // конструктор копирования
 {
+    BitLen = bf.BitLen;
+    MemLen = bf.MemLen;
+    pMem = new TELEM[MemLen];
+    for (int i = 0; i < MemLen; i++)
+        pMem[i] = bf.pMem[i];
 }
 
 TBitField::~TBitField()
 {
+    delete[] pMem;
 }
 
 int TBitField::GetMemIndex(const int n) const // индекс Мем для бита n
@@ -31,35 +43,48 @@ int TBitField::GetMemIndex(const int n) const // индекс Мем для би
 
 TELEM TBitField::GetMemMask(const int n) const // битовая маска для бита n
 {
-    return FAKE_INT;
+    if (!(n > 0 && n < BitLen)) throw - 2;
+    return 1 << (n % 32);
 }
 
 // доступ к битам битового поля
 
 int TBitField::GetLength(void) const // получить длину (к-во битов)
 {
-  return FAKE_INT;
+    return BitLen;
 }
 
 void TBitField::SetBit(const int n) // установить бит
 {
+    pMem[GetMemIndex(n)] |= GetMemMask(n);
 }
 
 void TBitField::ClrBit(const int n) // очистить бит
 {
-
+    pMem[GetMemIndex(n)] &= ~GetMemMask(n);
 }
 
 int TBitField::GetBit(const int n) const // получить значение бита
 {
-  return FAKE_INT;
+    TELEM mask = GetMemMask(n);
+    return mask == pMem[GetMemIndex(n)] & mask;
 }
 
 // битовые операции
 
 TBitField& TBitField::operator=(const TBitField &bf) // присваивание
 {
-    return FAKE_BITFIELD;
+    if (this == &bf) return *this;
+    if (MemLen != bf.MemLen)
+    {
+        delete[] pMem;
+        pMem = new TELEM[bf.MemLen];
+        MemLen = bf.MemLen;
+    }
+    BitLen = bf.BitLen;
+    for (int i = 0; i < MemLen; i++)
+        pMem[i] = bf.pMem[i];
+    return *this;
 }
 
 int TBitField::operator==(const TBitField &bf) const // сравнение
